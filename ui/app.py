@@ -71,8 +71,8 @@ def main() -> None:
         st.header("Configuration")
         provider = st.selectbox(
             "LLM provider",
-            options=["hf", "openai", "anthropic"],
-            index=["hf", "openai", "anthropic"].index(os.getenv("DOCMIND_LLM_PROVIDER", "hf")),
+            options=["groq", "hf", "anthropic"],
+            index=["groq", "hf", "anthropic"].index(os.getenv("DOCMIND_LLM_PROVIDER", "groq")),
         )
         st.info("Add documents to data/ and run ingestion before asking document questions.")
 

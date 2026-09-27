@@ -11,7 +11,7 @@ from agent.graph import run_agent
 def main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument("question")
-    parser.add_argument("--provider", choices=["hf", "openai", "anthropic"])
+    parser.add_argument("--provider", choices=["groq", "hf", "anthropic"])
     args = parser.parse_args()
     result = asyncio.run(run_agent(args.question, args.provider))
     print(result.answer)

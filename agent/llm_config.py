@@ -30,19 +30,19 @@ def _local_huggingface_llm() -> BaseChatModel:
     return ChatHuggingFace(llm=HuggingFacePipeline(pipeline=generator))
 
 
-def get_llm(provider: str) -> BaseChatModel:
-    """Return the configured chat model for ``hf``, ``openai``, or ``anthropic``."""
+def get_llm(provider: str = "groq") -> BaseChatModel:
+    """Return the configured chat model for Groq, HF local, or Anthropic."""
     selected = provider.strip().lower()
     if selected in {"hf", "huggingface", "local"}:
         return _local_huggingface_llm()
-    if selected == "openai":
-        from langchain_openai import ChatOpenAI
+    if selected == "groq":
+        from langchain_groq import ChatGroq
 
-        api_key = os.getenv("OPENAI_API_KEY")
+        api_key = os.getenv("GROQ_API_KEY")
         if not api_key:
-            raise RuntimeError("OPENAI_API_KEY is required when DOCMIND_LLM_PROVIDER=openai")
-        return ChatOpenAI(
-            model=os.getenv("OPENAI_MODEL", "gpt-4o-mini"),
+            raise RuntimeError("GROQ_API_KEY is required when DOCMIND_LLM_PROVIDER=groq")
+        return ChatGroq(
+            model=os.getenv("GROQ_MODEL", "llama-3.3-70b-versatile"),
             api_key=api_key,
             temperature=0,
         )
@@ -57,4 +57,4 @@ def get_llm(provider: str) -> BaseChatModel:
             api_key=api_key,
             temperature=0,
         )
-    raise ValueError("Unsupported LLM provider. Choose 'hf', 'openai', or 'anthropic'.")
+    raise ValueError("Unsupported LLM provider. Choose 'groq', 'hf', or 'anthropic'.")

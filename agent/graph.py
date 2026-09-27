@@ -47,7 +47,7 @@ def mcp_server_config() -> dict[str, dict[str, Any]]:
 
 async def build_agent(provider: str | None = None) -> tuple[Any, MultiServerMCPClient]:
     """Connect to the MCP server and build a LangGraph ReAct agent."""
-    selected_provider = provider or os.getenv("DOCMIND_LLM_PROVIDER", "hf")
+    selected_provider = provider or os.getenv("DOCMIND_LLM_PROVIDER", "groq")
     client = MultiServerMCPClient(mcp_server_config())
     tools = await client.get_tools()
     if not tools:

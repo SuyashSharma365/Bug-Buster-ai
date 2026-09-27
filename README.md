@@ -16,7 +16,7 @@ Streamlit -> LangGraph agent -> langchain-mcp-adapters -> MCP stdio server
 - `ingestion/embed_and_store.py` uses `sentence-transformers` with `BAAI/bge-small-en-v1.5` by default. Set `DOCMIND_EMBEDDING_MODEL=BAAI/bge-large-en-v1.5` for the larger model.
 - `mcp_server/docs_server.py` is an official Python MCP SDK server using stdio transport. Its `search_docs` tool embeds a query and searches persistent ChromaDB.
 - `agent/graph.py` starts the MCP server through `langchain-mcp-adapters`, loads its tools asynchronously, and builds a LangGraph ReAct agent.
-- `agent/llm_config.py` supports local Transformers generation (`hf`) and API-backed `openai` or `anthropic` chat models.
+- `agent/llm_config.py` supports Groq (`groq`), local Transformers generation (`hf`), and API-backed Anthropic (`anthropic`) chat models.
 - `ui/app.py` provides a Streamlit chat UI and displays the MCP tools used for each answer.
 
 ## Setup
@@ -33,12 +33,12 @@ Copy-Item .env.example .env
 Edit `.env` and choose a provider:
 
 ```dotenv
-DOCMIND_LLM_PROVIDER=openai
-OPENAI_API_KEY=your-key
-OPENAI_MODEL=gpt-4o-mini
+DOCMIND_LLM_PROVIDER=groq
+GROQ_API_KEY=your-key
+GROQ_MODEL=llama-3.3-70b-versatile
 ```
 
-For Anthropic, use `DOCMIND_LLM_PROVIDER=anthropic` and `ANTHROPIC_API_KEY`. For a local Hugging Face model, use `DOCMIND_LLM_PROVIDER=hf`; the first run downloads the model configured by `DOCMIND_HF_MODEL`. Local tool calling depends on the selected model and chat template, so an API provider is the simplest starting point.
+For Anthropic, use `DOCMIND_LLM_PROVIDER=anthropic` and `ANTHROPIC_API_KEY`. For a local Hugging Face model, use `DOCMIND_LLM_PROVIDER=hf`; the first run downloads the model configured by `DOCMIND_HF_MODEL`. Groq is the default API provider and supports the agent's tool-calling flow.
 
 ## Ingest documents
 
@@ -69,7 +69,7 @@ streamlit run ui/app.py
 Or ask one question from the command line:
 
 ```powershell
-python -m agent "What does the documentation say about authentication?" --provider openai
+python -m agent "What does the documentation say about authentication?" --provider groq
 ```
 
 ## Configuration
@@ -80,5 +80,5 @@ See `.env.example` for all supported settings. Important values include `DOCMIND
 
 - `ChromaDB is empty`: put supported files in `data/` and rerun ingestion.
 - Missing API key: select `hf` for local inference or set the key required by the selected API provider.
-- Local model memory errors: use a smaller instruction-tuned model in `DOCMIND_HF_MODEL`, or select `openai`/`anthropic`.
+- Local model memory errors: use a smaller instruction-tuned model in `DOCMIND_HF_MODEL`, or select `groq`/`anthropic`.
 - MCP startup errors: run the command from the project root so Python can import `mcp_server.docs_server`.
