@@ -57,7 +57,7 @@ def ingest(
 
 
 def main() -> None:
-    parser = argparse.ArgumentParser(description="Embed DocMind documents into persistent ChromaDB storage.")
+    parser = argparse.ArgumentParser(description="Embed Bug Buster AI documents into persistent ChromaDB storage.")
     parser.add_argument("--data-dir", default=os.getenv("DOCMIND_DATA_DIR", "data"))
     parser.add_argument("--reset", action="store_true", help="Replace existing chunks with this ingestion run")
     args = parser.parse_args()

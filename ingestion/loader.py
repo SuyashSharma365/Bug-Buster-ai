@@ -1,8 +1,9 @@
-"""Load supported documents from the DocMind data directory."""
+    """Load supported documents from the Bug Buster AI data directory."""
 
 from __future__ import annotations
 
 import argparse
+import logging
 from pathlib import Path
 from typing import Iterable
 
@@ -10,6 +11,7 @@ from langchain_core.documents import Document
 from pypdf import PdfReader
 
 SUPPORTED_SUFFIXES = {".pdf", ".md", ".txt"}
+logger = logging.getLogger(__name__)
 
 
 def load_pdf(path: Path) -> list[Document]:
@@ -26,8 +28,17 @@ def load_pdf(path: Path) -> list[Document]:
 
 def load_text(path: Path) -> Document:
     """Load a Markdown or plain-text file as one document."""
+    try:
+        content = path.read_text(encoding="utf-8")
+    except UnicodeDecodeError:
+        try:
+            content = path.read_text(encoding="utf-8-sig")
+        except UnicodeDecodeError:
+            logger.warning("File %s may have encoding issues; falling back to latin-1", path)
+            content = path.read_text(encoding="latin-1")
+
     return Document(
-        page_content=path.read_text(encoding="utf-8"),
+        page_content=content,
         metadata={"source": str(path), "file_type": path.suffix.lower()},
     )
 
@@ -48,7 +59,7 @@ def load_documents(data_dir: str | Path = "data") -> list[Document]:
 
 
 def main() -> None:
-    parser = argparse.ArgumentParser(description="Load DocMind source documents and report what was found.")
+    parser = argparse.ArgumentParser(description="Load Bug Buster AI source documents and report what was found.")
     parser.add_argument("--data-dir", default="data")
     args = parser.parse_args()
     documents = load_documents(args.data_dir)

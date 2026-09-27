@@ -1,1 +1,1 @@
-"""Document ingestion pipeline for DocMind."""
+"""Document and repository ingestion pipeline for Bug Buster AI."""

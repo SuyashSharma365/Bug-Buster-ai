@@ -1,27 +1,19 @@
-# DocMind
+# Bug Buster AI
 
-DocMind is a local-first GenAI RAG assistant. It indexes PDFs, Markdown, and text files into ChromaDB, exposes semantic search through a custom MCP server, and lets a LangGraph ReAct agent decide when to retrieve context before answering in Streamlit.
+Bug Buster AI is an MCP-powered retrieval-augmented generation assistant with two capabilities: it answers questions over ingested documents and reviews GitHub repositories for bugs, security issues, and code quality problems. It uses Hugging Face embeddings, ChromaDB, LangChain and LangGraph orchestration, and a Groq-hosted LLM to retrieve relevant evidence before answering.
 
 ## Architecture
 
-```text
-data/ -> ingestion/loader.py -> chunker.py -> embed_and_store.py -> ChromaDB
-                                                                    ^
-Streamlit -> LangGraph agent -> langchain-mcp-adapters -> MCP stdio server
-                                                            -> search_docs
-```
-
-- `ingestion/loader.py` loads `.pdf`, `.md`, and `.txt` files.
-- `ingestion/chunker.py` uses LangChain's `RecursiveCharacterTextSplitter`.
-- `ingestion/embed_and_store.py` uses `sentence-transformers` with `BAAI/bge-small-en-v1.5` by default. Set `DOCMIND_EMBEDDING_MODEL=BAAI/bge-large-en-v1.5` for the larger model.
-- `mcp_server/docs_server.py` is an official Python MCP SDK server using stdio transport. Its `search_docs` tool embeds a query and searches persistent ChromaDB.
-- `agent/graph.py` starts the MCP server through `langchain-mcp-adapters`, loads its tools asynchronously, and builds a LangGraph ReAct agent.
-- `agent/llm_config.py` supports Groq (`groq`), local Transformers generation (`hf`), and API-backed Anthropic (`anthropic`) chat models.
-- `ui/app.py` provides a Streamlit chat UI and displays the MCP tools used for each answer.
+- **Hugging Face embeddings**: Sentence Transformers embed documents and source-code chunks for semantic retrieval.
+- **ChromaDB vector store**: Local persistent storage keeps document chunks in `docmind_documents` and repository code in `code_chunks`.
+- **MCP server**: `mcp_server/docs_server.py` exposes `search_docs` and `search_code` over stdio.
+- **LangGraph ReAct agent**: Chooses the appropriate MCP search tool and grounds responses in retrieved content.
+- **Groq LLM**: Provides the default tool-calling model, configured through `GROQ_API_KEY` and `GROQ_MODEL`.
+- **Streamlit UI**: Provides chat, provider selection, repository ingestion, and tool-use visibility.
 
 ## Setup
 
-Requires Python 3.11 or newer.
+Python 3.11 or newer is required.
 
 ```powershell
 python -m venv .venv
@@ -30,55 +22,75 @@ pip install -r requirements.txt
 Copy-Item .env.example .env
 ```
 
-Edit `.env` and choose a provider:
+Open `.env` and fill in your Groq credentials:
 
 ```dotenv
 DOCMIND_LLM_PROVIDER=groq
-GROQ_API_KEY=your-key
-GROQ_MODEL=llama-3.3-70b-versatile
+GROQ_API_KEY=your-groq-api-key
+GROQ_MODEL=openai/gpt-oss-120b
 ```
 
-For Anthropic, use `DOCMIND_LLM_PROVIDER=anthropic` and `ANTHROPIC_API_KEY`. For a local Hugging Face model, use `DOCMIND_LLM_PROVIDER=hf`; the first run downloads the model configured by `DOCMIND_HF_MODEL`. Groq is the default API provider and supports the agent's tool-calling flow.
+The default embedding model is `BAAI/bge-small-en-v1.5`. Set `DOCMIND_EMBEDDING_MODEL=BAAI/bge-large-en-v1.5` when higher retrieval quality is worth the additional memory use.
 
-## Ingest documents
+## Usage
 
-Place source files in `data/`, then run:
+### Ingest documents
+
+Place PDF, Markdown, or text files in `data/`, then run:
 
 ```powershell
-python -m ingestion.embed_and_store --reset
+python -m ingestion.embed_and_store
 ```
 
-The default embedding model is smaller for practical local startup. The larger `BAAI/bge-large-en-v1.5` model can improve retrieval quality at a higher memory cost. Chroma data is persisted under `storage/chroma/`.
+The document chunks are stored in the document collection used by `search_docs`.
 
-## Run the MCP server
+### Ingest a GitHub repository
 
-The agent starts this stdio server automatically. To start it directly for inspection:
+Clone and index a repository into the separate `code_chunks` collection:
 
 ```powershell
-python -m mcp_server.docs_server
+python -m ingestion.embed_and_store_repo --repo-url <url> --reset
 ```
 
-Do not print ordinary logs to stdout while using stdio MCP transport; stdout is reserved for MCP JSON-RPC messages.
+The Streamlit sidebar also provides a **GitHub repo URL** field and **Ingest Repository** button that calls the same ingestion function directly. The ingestion process skips generated/vendor directories, unsupported extensions, and source files larger than 500 KB.
 
-## Run the assistant
+### Launch the app
 
 ```powershell
 streamlit run ui/app.py
 ```
 
-Or ask one question from the command line:
+Ask questions about indexed documents or request a code review, for example:
 
-```powershell
-python -m agent "What does the documentation say about authentication?" --provider groq
+- `What does the documentation say about authentication?`
+- `Review the repository for security vulnerabilities in the login flow.`
+- `Find error-handling gaps in the API client.`
+
+## Example
+
+Question:
+
+```text
+Review the repository for bugs in the authentication code.
 ```
 
-## Configuration
+A grounded response may look like:
 
-See `.env.example` for all supported settings. Important values include `DOCMIND_LLM_PROVIDER`, `DOCMIND_HF_MODEL`, `DOCMIND_EMBEDDING_MODEL`, `DOCMIND_CHROMA_DIR`, and `DOCMIND_COLLECTION`.
+```text
+Issue: User input is interpolated directly into the SQL query, allowing SQL injection.
+File: src/auth.py
+Chunk: 2
+Recommendation: Use a parameterized query and validate the input before execution.
+```
 
-## Troubleshooting
+Bug Buster AI reports only issues visible in retrieved code and cites the relevant `file_path` and `chunk_index`.
 
-- `ChromaDB is empty`: put supported files in `data/` and rerun ingestion.
-- Missing API key: select `hf` for local inference or set the key required by the selected API provider.
-- Local model memory errors: use a smaller instruction-tuned model in `DOCMIND_HF_MODEL`, or select `groq`/`anthropic`.
-- MCP startup errors: run the command from the project root so Python can import `mcp_server.docs_server`.
+## Tech Stack
+
+- Hugging Face Transformers and Sentence Transformers
+- LangChain
+- LangGraph
+- Model Context Protocol (MCP)
+- ChromaDB
+- Groq
+- Streamlit

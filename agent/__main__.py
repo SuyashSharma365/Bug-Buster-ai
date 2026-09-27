@@ -1,4 +1,4 @@
-"""Run a one-off DocMind question from the command line."""
+"""Run a one-off Bug Buster AI question from the command line."""
 
 from __future__ import annotations
 

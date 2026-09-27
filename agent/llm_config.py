@@ -42,7 +42,7 @@ def get_llm(provider: str = "groq") -> BaseChatModel:
         if not api_key:
             raise RuntimeError("GROQ_API_KEY is required when DOCMIND_LLM_PROVIDER=groq")
         return ChatGroq(
-            model=os.getenv("GROQ_MODEL", "llama-3.3-70b-versatile"),
+            model=os.getenv("GROQ_MODEL", "openai/gpt-oss-120b"),
             api_key=api_key,
             temperature=0,
         )

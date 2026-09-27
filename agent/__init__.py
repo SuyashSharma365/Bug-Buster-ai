@@ -1,1 +1,1 @@
-"""LangGraph agent components for DocMind."""
+"""LangGraph agent components for Bug Buster AI."""

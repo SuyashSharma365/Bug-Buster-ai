@@ -1,6 +1,10 @@
-"""Streamlit chat UI for DocMind."""
+"""Streamlit chat UI for Bug Buster AI."""
 
 from __future__ import annotations
+
+import sys
+from pathlib import Path
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 import asyncio
 import os
@@ -14,6 +18,7 @@ from dotenv import load_dotenv
 from langchain_core.messages import AIMessage, ToolMessage
 
 from agent.graph import stream_agent
+from ingestion.embed_and_store_repo import ingest_repository
 
 load_dotenv()
 
@@ -63,9 +68,9 @@ def stream_response(question: str, provider: str) -> Iterator[str]:
 
 
 def main() -> None:
-    st.set_page_config(page_title="DocMind", page_icon="D", layout="wide")
-    st.title("DocMind")
-    st.caption("A document-grounded RAG assistant orchestrated through MCP and LangGraph.")
+    st.set_page_config(page_title="Bug Buster AI", page_icon="B", layout="wide")
+    st.title("Bug Buster AI")
+    st.caption("An MCP-powered assistant for document Q&A and GitHub code review — finds bugs, security issues, and code smells using retrieval-augmented generation.")
 
     with st.sidebar:
         st.header("Configuration")
@@ -74,7 +79,23 @@ def main() -> None:
             options=["groq", "hf", "anthropic"],
             index=["groq", "hf", "anthropic"].index(os.getenv("DOCMIND_LLM_PROVIDER", "groq")),
         )
-        st.info("Add documents to data/ and run ingestion before asking document questions.")
+        repo_url = st.text_input("GitHub repo URL", placeholder="https://github.com/user/repository")
+        if st.button("Ingest Repository"):
+            if not repo_url.strip():
+                st.warning("Enter a GitHub repository URL first.")
+            else:
+                with st.spinner("Cloning and indexing repository..."):
+                    try:
+                        report = ingest_repository(repo_url.strip(), reset=True)
+                        st.success(
+                            f"Repository ingested: {len(report.documents)} files processed, "
+                            f"{report.chunks_stored} chunks stored."
+                        )
+                        if report.skipped_files:
+                            st.warning(f"Skipped {len(report.skipped_files)} files due to size or read errors.")
+                    except Exception as error:
+                        st.error(f"Repository ingestion failed: {error}")
+        st.info("Add documents to data/ or ingest a GitHub repository before asking document or code questions.")
 
     if "messages" not in st.session_state:
         st.session_state.messages = []

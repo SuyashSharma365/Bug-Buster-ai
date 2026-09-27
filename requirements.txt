@@ -15,3 +15,4 @@ torch>=2.0.0
 streamlit>=1.38.0
 pypdf>=5.0.0
 python-dotenv>=1.0.0
+gitpython>=3.1.0

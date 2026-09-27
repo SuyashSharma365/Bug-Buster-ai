@@ -1,1 +1,1 @@
-"""DocMind Streamlit user interface."""
+"""Bug Buster AI Streamlit user interface."""
